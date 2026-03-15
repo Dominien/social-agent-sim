@@ -1,20 +1,300 @@
-# Hauswelt
+# Social Agent Sim
 
-**Identity is not a property. Identity is a process.**
+**The environment is the personality.**
 
-A multi-agent social simulation where 6 AI agents live in a Berlin apartment building. No personality traits are programmed. No behavioral scripts exist. Each agent receives only a two-line seed — name, age, occupation, apartment number — and a world they can perceive and act in.
+6 LLM agents live in a Berlin apartment building. They receive no personality, no behavioral instructions, no goals. Each agent gets a two-line seed — name, age, job, apartment — and a structured world that enforces physics: hunger, fatigue, locked doors, opening hours, adjacency-based sound, phone number requirements.
 
-What emerges over 14 simulated days is not what you'd expect from language models.
+The agents don't produce interesting behavior because they're told to. They produce it because the environment leaves them no choice. A retired woman who is always home will encounter more neighbors than a construction worker who leaves at 8am. That's not personality. That's architecture.
 
 ---
 
-## The Thesis
+## How It Works
 
-The dominant approach to giving AI agents "personality" is to describe it in the system prompt: *"You are cheerful and helpful"*, *"You are a cautious analyst."* This works for chatbots. It fails for agents.
+### The Core Loop
 
-Hauswelt tests the counter-thesis: **identity emerges from context, not from description.** Give agents a body (hunger, fatigue), a place (apartment, stairwell, backyard), neighbors they don't know yet, and time that passes — and watch what happens.
+Every simulated hour, the engine builds a perception for each agent, calls the LLM once, and resolves the returned actions against world state.
 
-The simulation ran for 14 days. The agents were never told to be interesting. They became interesting anyway.
+```mermaid
+flowchart TD
+    A[Engine: Advance Tick] --> B[Update World State]
+    B --> B1[Weather, body hunger/energy drift]
+    B --> B2[Place scheduled objects by day]
+    B --> B3[Enforce closing hours]
+    B --> B4[Route agents away for work schedules]
+
+    B1 & B2 & B3 & B4 --> C[Group Agents by Location]
+
+    C --> D{Solo or Multi-Agent?}
+
+    D -->|Solo| E[Build Perception]
+    D -->|Multi| F[Build Perception + Conversation Context]
+
+    E --> G[LLM Call: 1 per agent]
+    F --> H[LLM Calls: Sequential rounds, up to max]
+
+    G --> I[Resolve Actions Against World State]
+    H --> I
+
+    I --> J[Update Memory / Acquaintances / Fridge / Finances]
+    J --> K[Write State + Tick Log]
+    K --> A
+```
+
+The agent sees the world. The agent acts. The engine resolves. That's it.
+
+### What the Agent Actually Receives
+
+This is the **entire prompt** for one agent turn. No system prompt. No personality instructions. No chain-of-thought scaffolding.
+
+```
+You are Marta.
+
+Marta. 62. Retired. Lives alone in Apartment 1, 1st floor.
+25 years here. Widowed.
+
+Locations in the building: Apartment 1-6, Stairwell, Entrance Hall,
+Mailboxes (ground floor), Backyard. Outside: Späti, Zum Anker.
+Your mailbox is at the Mailboxes on the ground floor — you need to
+use move_to to get there.
+
+# Marta
+
+## People
+- Rolf: quiet, but kind when you catch him
+
+## Experiences
+Monday 09:00. Apartment 1. You are alone.
+Monday 14:00. Stairwell. the young man from the 3rd floor was there.
+Said: "Hello." Went to Backyard.
+Night. Slept (well). New day.
+Tuesday 08:00. Apartment 1. You are alone.
+
+## Important
+*(Nothing)*
+
+---
+
+Tuesday, 10:00. Stairwell. Cloudy, 8°C.
+You are alone.
+(You're hungry.)
+
+Respond ONLY with a JSON object:
+{ "actions": [ { "type": "think", "text": "..." }, ... ] }
+
+Available actions:
+- think / speak / do / wait / move_to / check_mailbox / read
+- knock_door / lock_door / unlock_door / send_message / phone_call
+- leave_note / file_objection / check_deadline
+
+Keep it short. Actions: 2-5 words. Thoughts: fragments.
+```
+
+That's **~200 tokens of structure** plus variable perception and memory. No "you are a caring person." No "you tend to check on your neighbors." The environment creates those behaviors:
+
+- Marta is hungry → she might go to the Späti
+- She's in the stairwell → she might see someone
+- She has no memories of interaction → she has nothing to reference
+
+Everything the agent knows comes from what the engine fed it. Everything it can do is constrained by the action schema. The engine is the personality.
+
+---
+
+## The Architecture in Detail
+
+### Engine vs. Agent: Who Controls What
+
+```mermaid
+flowchart LR
+    subgraph ENGINE ["Engine (deterministic)"]
+        direction TB
+        E1[Time + Weather]
+        E2[Body State: hunger, energy, sleep]
+        E3[Location + Opening Hours]
+        E4[Sound Propagation]
+        E5[Object Placement by Schedule]
+        E6[Acquaintance Gating]
+        E7[Phone System]
+        E8[Memory Compression]
+        E9[Fridge + Finances]
+        E10[Endgame Tracking]
+    end
+
+    subgraph AGENT ["Agent (LLM, single call)"]
+        direction TB
+        A1[Choose action: speak/move/wait/...]
+        A2[Generate dialogue content]
+        A3[Decide social initiative]
+    end
+
+    subgraph RESOLVE ["Resolution (deterministic)"]
+        direction TB
+        R1[Validate action against world rules]
+        R2[Update world state]
+        R3[Write to memory file]
+    end
+
+    ENGINE -->|perception string| AGENT
+    AGENT -->|JSON actions| RESOLVE
+    RESOLVE -->|state changes| ENGINE
+```
+
+The split is intentional. The engine handles **everything that would otherwise require instructing the agent**:
+
+| Without engine enforcement | With engine enforcement |
+|---|---|
+| "Don't use names of people you haven't met" | Acquaintance system renders unknown agents as "the young man from the 3rd floor" |
+| "You're getting hungry, consider eating" | Body state drift injects `(You're hungry.)` into perception |
+| "The bar is closed at night" | Closing-hour enforcement moves agents home automatically |
+| "You can only call people whose number you have" | Phone contacts list is checked; action rejected if no number |
+| "Remember what happened yesterday" | Memory file is rebuilt from actions each tick, compressed over time |
+| "Don't have the same conversation twice" | Interaction cooldown suppresses repeat encounters within 3 ticks |
+
+Every row is a **prompt instruction we never had to write** because the engine handles it structurally.
+
+### Tick Structure
+
+```
+1 tick = 1 simulated hour, 07:00–22:00 (16 ticks/day)
+Night is skipped: body resets, sleep memory injected
+
+Tick 1   = Monday 07:00
+Tick 16  = Monday 22:00
+Tick 17  = Tuesday 07:00
+...
+Tick 224 = Sunday 22:00 (Day 14)
+```
+
+### Perception Builder
+
+The engine constructs each agent's perception from world state. The agent never reads world state directly.
+
+```mermaid
+flowchart TD
+    WS[World State JSON] --> PB[Perception Builder]
+
+    PB --> T["Time: 'Tuesday, 14:00'"]
+    PB --> L["Location: 'Stairwell'"]
+    PB --> W["Weather: 'Cloudy, 8°C'"]
+    PB --> O["Others: 'the older woman from the 1st floor is here.'
+    (or 'Marta is here.' if acquainted)"]
+    PB --> B["Body: '(You're hungry. You're tired.)'"]
+    PB --> F["Fridge: 'Fridge: Bread, Milk (2x), Eggs.'"]
+    PB --> M["Messages: 'Message from Sarah (2 hours ago): ...'"]
+    PB --> S["Sounds: 'Muffled voices from Apartment 4.'"]
+    PB --> OBJ["Objects: 'Notice on the board: Modernization...'"]
+    PB --> DL["Deadline: '(Objection deadline: 3 days left.)'"]
+    PB --> FB["Feedback: '[Can't do that] Späti is closed.'"]
+
+    T & L & W & O & B & F & M & S & OBJ & DL & FB --> P["Perception String → Agent Prompt"]
+```
+
+Key design decisions:
+- **Acquaintance gating**: Agents who haven't spoken don't know each other's names. The engine replaces names with physical descriptions ("the man from the 2nd floor") until they've had a conversation.
+- **Sound propagation**: Apartments have an adjacency map. Loud actions in Apartment 3 are audible as "Loud music from Apartment 3" in Apartment 4 and the Stairwell. This creates awareness without direct interaction.
+- **Fridge tracking**: The engine tracks individual food items. Eating removes items. Shopping at the Späti adds items. When the fridge is empty, the agent sees "Fridge: empty." — creating natural pressure to go shopping.
+
+### Action Resolution
+
+The agent returns JSON. The engine validates and resolves every action against world rules.
+
+```typescript
+// Agent returns:
+{ "actions": [
+    { "type": "move_to", "location": "Späti" },
+    { "type": "speak", "text": "Need some bread." }
+]}
+
+// Engine resolves:
+// 1. Is Späti open? (check hours: 7-22) → Yes → move agent
+// 2. Is anyone else at Späti? → inject speech into conversation
+// 3. Detect shopping keywords → add Bread to home fridge
+// 4. Deduct €5-15 from agent's balance
+```
+
+Actions that violate world rules get rejected with feedback:
+- `move_to "Zum Anker"` at 14:00 → `[Can't do that] Zum Anker is closed.`
+- `phone_call "Suki"` without her number → `You don't have Suki's number. You need to exchange numbers first.`
+- `check_mailbox` from the 3rd floor → `You're not at the mailboxes. Go to the ground floor first.`
+
+These rejections are injected into the agent's next perception as `[feedback]`, so it learns from failed actions without any instruction.
+
+### Memory System
+
+Each agent has a markdown memory file with three sections:
+
+```markdown
+# Marco
+
+## People
+- Sarah: my girlfriend, we live together
+- Marta: friendly, always in the stairwell
+
+## Experiences
+Monday 07:00. Apartment 5. Sarah was there. Said: "Morning."
+Monday 10:00. Stairwell. the older woman from the 1st floor was there.
+Monday 14:00. Späti. Bought bread and milk.
+Night. Slept (well). New day.
+Tuesday 08:00. Apartment 5. You are alone. Sarah is away (Work (daycare)).
+
+## Important
+- Tuesday, 11:00: Werther & Partner Law Firm... termination of tenancy...
+```
+
+The engine writes to this file after every tick. The agent reads it at the start of every turn. This creates a **feedback loop without any prompt engineering**:
+
+1. Agent speaks to Rolf → engine writes `"Said: 'Have you seen the letter?'"` to memory
+2. Next tick, agent reads its own memory → sees it talked to Rolf about the letter
+3. Agent now has context for follow-up actions
+
+**Compression**: The 20 most recent entries stay verbatim. Older entries are compressed into summaries: `[Monday]: Met Marta, Sarah. Routine.` This prevents context window overflow while preserving relationship history.
+
+### Conversation Mechanics
+
+When multiple agents are at the same location, the engine runs sequential conversation rounds:
+
+```mermaid
+sequenceDiagram
+    participant E as Engine
+    participant A as Agent A (Marco)
+    participant B as Agent B (Marta)
+
+    E->>A: Perception + "Marta is here."
+    A->>E: speak: "Hello, how are you?"
+    E->>E: Add to conversation context
+    E->>B: Perception + conversation so far + "Your turn."
+    B->>E: speak: "Oh hello! Have you checked your mail?"
+    E->>E: Add to conversation context
+
+    Note over E: Round 2
+    E->>A: Conversation context + "Your turn."
+    A->>E: speak: "No, why?"
+    E->>B: Conversation context + "Your turn."
+    B->>E: speak: "There's an important letter."
+
+    Note over E: Round 3...up to max rounds
+    Note over E: Stops when nobody speaks or agents leave
+```
+
+**Encounter types** limit conversation length by location:
+- **Passing** (Stairwell, Entrance Hall, Mailboxes): max 2 rounds
+- **Coincidence** (Backyard, Späti, Zum Anker): max 8 rounds
+- **Deliberate** (inside apartments after knocking): max 8 rounds
+
+**Interaction cooldown**: If the same agents were at the same location within the last 3 ticks and nothing new happened (no new messages, no new arrivals), the engine suppresses the interaction. Each agent still gets a solo LLM call but no conversation context. This prevents infinite small-talk loops.
+
+### Service Staff
+
+Zum Anker (bar) and Späti (corner shop) have deterministic service NPCs. When an agent says something matching ordering patterns, the engine injects staff responses:
+
+```
+Agent speaks: "I'll have a beer and some lentil soup please."
+Engine detects: beer (€3.80) + lentil soup (€8.50)
+Engine injects: Waiter: "Got it. Beer, Lentil soup with bread. Coming right up."
+Next round:     Waiter brings Beer and Lentil soup with bread to the table.
+Engine deducts: €12.30 from agent's balance
+```
+
+No LLM call for the waiter. Pure pattern matching. The agents experience these locations as living spaces rather than empty rooms.
 
 ---
 
@@ -46,206 +326,102 @@ Schillerstraße 14, Berlin-Neukölln
 
 ### The Agents
 
-| Agent | Age | Occupation | Apartment | Schedule |
-|-------|-----|-----------|-----------|----------|
-| **Marco** | 24 | Web developer (remote) | Apt 5, 3rd floor | Always home |
-| **Sarah** | 24 | Social work student / daycare worker | Apt 5, 3rd floor | Away Wed-Fri 8-15 |
-| **Marta** | 62 | Retired, widowed | Apt 1, 1st floor | Always home |
-| **Rolf** | 55 | Construction worker, divorced | Apt 3, 2nd floor | Away Mon-Fri 8-17 |
-| **Hakim** | 38 | IT consultant | Apt 4, 3rd floor | Away Mon-Fri 9-18 |
-| **Suki** | 23 | Political science student | Apt 6, top floor | Away Mon-Fri 8-12 (some days) |
+| Agent | Age | Occupation | Apartment | Schedule | Seed |
+|-------|-----|-----------|-----------|----------|------|
+| **Marco** | 24 | Web developer (remote) | Apt 5 | Always home | 2 lines |
+| **Sarah** | 24 | Daycare worker | Apt 5 | Away Wed-Fri 8-15 | 2 lines |
+| **Marta** | 62 | Retired, widowed | Apt 1 | Always home | 2 lines |
+| **Rolf** | 55 | Construction worker | Apt 3 | Away Mon-Fri 8-17 | 2 lines |
+| **Hakim** | 38 | IT consultant | Apt 4 | Away Mon-Fri 9-18 | 2 lines |
+| **Suki** | 23 | Student | Apt 6 | Away some weekdays 8-12 | 2 lines |
 
-Each agent's entire personality seed is two lines. That's it. Everything else — their voice, their relationships, their decisions — emerges from experience.
+The schedule column is the entire behavioral explanation. Marta and Marco are home all day — they encounter more people. Rolf and Hakim are gone 9+ hours — they're structurally isolated. No personality prompt needed.
 
----
+### Sound Adjacency Map
 
-## What Happened: 14 Days
+```mermaid
+graph LR
+    A1[Apt 1] --- SW[Stairwell]
+    A3[Apt 3] --- SW
+    A3 --- A4[Apt 4]
+    A4 --- SW
+    A4 --- A5[Apt 5]
+    A5 --- SW
+    A5 --- A6[Apt 6]
+    A6 --- SW
+```
 
-### Days 1-5: Strangers
-
-The agents begin as strangers in a building. They share walls but not words.
-
-**The soup incident (Day 2).** Marta cooks soup and decides to bring some to her neighbor. She knocks on Rolf's door. He opens it, surprised. Nobody has knocked on his door in months. They share the soup. This is the first voluntary social interaction in the simulation — and it was not scripted.
-
-**Marco and Sarah's quiet crisis.** Marco works from home. Sarah leaves for work three days a week. By Day 3, their conversations have become transactional: groceries, schedules, who's cooking. The simulation reveals something uncomfortable — proximity without shared experience produces distance, not closeness.
-
-**Suki's isolation.** Suki lives on the top floor. She goes to university, comes home, studies. By Day 4, her memory file shows a pattern: location entries with no other names. She is alone most of the time, and the memory system makes this visible.
-
-**Marta's persistence.** Marta, the retired widow who has lived here 25 years, begins appearing in the stairwell at strategic times. She's the only agent who consistently initiates contact. Not because she was told to be social — but because she is always home, always available, and her two-line seed gives her nothing else to do.
-
-### Days 7-9: The Letter Arrives
-
-On Day 7, an eviction letter appears in every mailbox. The building has been sold to VESTA Immobilien Verwaltungs GmbH. All tenants must leave. They have 14 days to file a joint objection under §574 BGB.
-
-Not everyone checks their mail on the same day. The information spreads unevenly — through stairwell conversations, text messages, phone calls. Some agents learn about the eviction from the letter itself. Others hear about it from neighbors before they've even opened their mailbox.
-
-**The SMS nudge.** On Day 8, the property management sends an SMS: *"There is a letter from property management in your mailbox. Please take note."* This is the engine ensuring every agent has a fair chance to discover the plot — without forcing them to act.
-
-### Days 10-13: Community Forms
-
-What follows is the most remarkable sequence in the simulation.
-
-**The causal chain.** Marta tells Marco about the letter in the stairwell. Marco tells Sarah when she gets home from work. Sarah, the social work student, starts texting other tenants. Suki, who has been isolated for 9 days, receives a text message — her first social contact from a neighbor.
-
-The agents begin to organize. Not because they were told to. Not because there's a "cooperation" parameter. But because the eviction letter creates shared context — and shared context, when combined with the tools to act (phone calls, text messages, door-knocking), produces collective action.
-
-**Signature collection.** To file the objection, at least 4 of 6 tenants must agree. The engine tracks this: who knows about the letter, who has expressed agreement, who has signed. Agents must physically or digitally communicate to spread awareness and collect support.
-
-### Day 14: The Deadline
-
-The objection deadline is Day 14 at 22:00. The simulation tracks whether the agents managed to:
-1. Inform all 6 tenants about the eviction
-2. Collect at least 4 signatures
-3. File the objection before the deadline
-
-**Rolf's door.** In several simulation runs, Rolf is the hardest tenant to reach. He works construction Mon-Fri 8-17. He comes home tired. He locks his door. When neighbors knock, sometimes he doesn't open. This isn't programmed reclusiveness — it's emergent behavior from his schedule, his fatigue system, and his lack of existing social connections.
-
-This is the thesis moment: Rolf's isolation isn't a personality trait. It's the result of his work schedule, his body state, and his history of non-interaction. Identity through context.
+When an agent plays loud music in Apt 3, agents in Apt 4 and the Stairwell perceive: `"Loud music from Apartment 3."` This creates organic awareness — agents can hear their neighbors exist without ever meeting them.
 
 ---
 
-## The Endgame System
+## The Endgame
 
-The simulation has a win condition: file a joint objection before the deadline.
+On Day 7, eviction letters appear in every mailbox. The simulation now has a win condition.
 
-### Object Schedule
+### Event Timeline
 
-| Day | Event |
-|-----|-------|
-| 7 | Eviction letters placed in all mailboxes |
-| 8 | SMS from property management: "Check your mailbox" |
-| 8+ | Ad from Fischer & Roth Law Firm (when any agent learns about eviction) |
-| 14 | Renovation notice posted in stairwell |
-| 21 | Personalized buyout offers in mailboxes |
-| 30 | Investors visit the building |
+```mermaid
+gantt
+    title Simulation Events
+    dateFormat X
+    axisFormat Day %s
+
+    section Objects
+    Eviction letters in mailboxes     :milestone, 7, 7
+    SMS "Check your mailbox"          :milestone, 7, 7
+    Law firm ad (after anyone reads)  :milestone, 8, 8
+    Renovation notice in stairwell    :milestone, 14, 14
+    Buyout offers in mailboxes        :milestone, 21, 21
+    Investor visit                    :milestone, 30, 30
+
+    section Deadline
+    Objection deadline (Day 14 22:00) :crit, milestone, 14, 14
+```
 
 ### Tracking
 
-The engine tracks three things:
-- **brief_knowledge**: Which agents know about the eviction letter (learned by reading it or hearing about it)
-- **objection_signers**: Which agents have expressed agreement to the objection (detected from conversation keywords)
-- **objection_filed**: Whether someone has filed the objection (requires ≥4 signers + all informed)
+The engine tracks three state variables — none of which the agents are told about:
+
+- **`brief_knowledge[agent]`**: `true` when agent reads the eviction letter OR hears about it in conversation (engine scans speech for keywords like "eviction", "letter", "objection")
+- **`objection_signers[agent]`**: `true` when agent expresses agreement in conversation (engine scans for "yes", "sign", "count me in", "of course", etc.)
+- **`objection_filed`**: `true` when any agent uses `file_objection` with ≥4 signers and all tenants informed
+
+The agents don't know these variables exist. They just talk. The engine interprets.
 
 ### Win Condition
 
-**PASS**: Objection filed before Day 14 22:00 with ≥4 signatures and all tenants informed.
-**FAIL**: Deadline passes without successful filing.
+**PASS**: `objection_filed === true` before Day 14 22:00, with `≥4` signers and all 6 tenants in `brief_knowledge`.
+
+**FAIL**: Deadline passes.
+
+---
+
+## What Emerges
+
+None of this is programmed. All of it happens consistently across runs:
+
+1. **Marta becomes the social hub** — not because she's told to be social, but because she's retired (always home) and lives on the 1st floor (near the entrance). Schedule + location = social role.
+
+2. **Rolf is the hardest to reach** — he works Mon-Fri 8-17, comes home with low energy, and has no existing connections. The engine's body state system makes him less likely to act when tired. His isolation is structural.
+
+3. **Marco and Sarah drift** — they share an apartment but have different schedules. The cooldown system means they don't have meaningful conversations when nothing new happens. Proximity without novelty = routine.
+
+4. **Information spreads through the social graph** — agents who met during Days 1-6 become information conduits for the eviction letter. The acquaintance + phone contact system means you can only text people you've met. Social infrastructure built during "boring" days determines crisis response.
+
+5. **Collective action requires physical infrastructure** — to organize, agents need phone numbers (requires meeting), awareness (requires reading or hearing), and agreement (requires conversation). The causal chain: be in same place → speak → exchange numbers → text about letter → agree → file. Every link is enforced by the engine.
 
 ---
 
 ## Interview Mode
 
-You can talk to any agent after (or during) a simulation:
+Talk to any agent mid-simulation:
 
 ```bash
-npm run interview -- Marco
+npm run interview -- Suki
 ```
 
-The agent responds based only on what they've experienced — their memory file, their current body state, the time of day. They don't have access to information they haven't encountered in the simulation.
-
----
-
-## Architecture
-
-### Tick Structure
-
-Each tick = 1 simulated hour (7:00-22:00, 16 ticks per day). Night is skipped — agents sleep, their body state resets, and a sleep memory entry is injected.
-
-```
-Tick → Time mapping:
-  Tick 1  = Monday 07:00
-  Tick 16 = Monday 22:00
-  Tick 17 = Tuesday 07:00
-  ...
-  Tick 224 = Sunday 22:00 (Day 14)
-```
-
-### Engine vs. Agent Control
-
-The engine controls the world. Agents control their behavior.
-
-**Engine responsibilities:**
-- Time, weather, body state (hunger, energy, sleep)
-- Location management, opening hours, closing-time enforcement
-- Object placement (letters, notices) on schedule
-- Sound propagation between adjacent apartments
-- Phone system (call → ring → pickup → conversation)
-- Service staff at Späti and Zum Anker (menu, ordering, payment)
-- Memory compression (recent 20 entries verbatim, older compressed)
-- Endgame tracking (letter knowledge, signatures, filing)
-- Acquaintance system (agents learn names through interaction)
-
-**Agent responsibilities:**
-- Deciding what to do (speak, move, think, wait, call, message, etc.)
-- All dialogue content
-- Social initiative (knocking on doors, starting conversations)
-- Emotional responses
-
-### The Minimal Prompt
-
-Each agent receives:
-1. A two-line seed (name, age, job, apartment)
-2. Their memory file (people, experiences, important items)
-3. Current perception (time, location, who's here, weather, body state, messages)
-4. The action schema (JSON format, available actions)
-
-No personality adjectives. No behavioral instructions. No "you are friendly" or "you tend to be cautious." The prompt is ~200 tokens of structure + variable perception.
-
----
-
-## Key Findings
-
-1. **Identity emerges from schedule.** Marco and Rolf have completely different social patterns — not because of personality traits, but because Marco is always home and Rolf is never home during the day.
-
-2. **Proximity ≠ connection.** Marco and Sarah share an apartment but develop less novel interaction than Marta and Suki, who live on different floors. Shared space without shared events produces routine, not relationship.
-
-3. **The first mover matters.** Marta consistently initiates contact because she has time (retired) and proximity (1st floor near the entrance). Her social role emerges from her circumstances, not from instructions.
-
-4. **Information spreads through trust networks.** The eviction letter doesn't spread uniformly. It follows the social graph that agents built during Days 1-7. Agents who made connections early become information hubs.
-
-5. **Body state shapes behavior.** Hungry agents go to the Späti. Tired agents stay home. Poor sleep makes agents less likely to initiate social contact. These aren't personality traits — they're environmental pressures.
-
-6. **Collective action requires infrastructure.** The agents can't organize without phone numbers. They can't get phone numbers without meeting. They can't meet without being in the same place at the same time. The causal chain from isolation to collective action is long and fragile.
-
-7. **Isolation is structural, not personal.** Rolf isn't antisocial. He works 8-17, comes home exhausted, and has no existing connections. His isolation is the predictable result of his constraints.
-
----
-
-## Failure Modes
-
-### Haiku vs. Sonnet
-
-The simulation was designed for **Claude Haiku** (fast, cheap, ~$0.50/day of simulation). Results with different models:
-
-| Model | Cost/day | Behavior |
-|-------|----------|----------|
-| Haiku | ~$0.50 | Functional. Agents are terse, sometimes passive. Works for the core mechanics. |
-| Sonnet | ~$5.00 | Richer dialogue, more initiative, better social reasoning. The "real" experience. |
-
-Haiku agents tend to wait more, produce shorter dialogue, and miss subtle social cues — but still organize when the eviction letter provides clear motivation.
-
-Sonnet agents initiate more social contact, produce more naturalistic dialogue, and form stronger opinions about neighbors.
-
----
-
-## The 12 Engine Fixes
-
-Over 5 iterations, we identified 12 design principles that make the simulation work:
-
-| # | Principle | What it prevents |
-|---|-----------|-----------------|
-| 1 | Sequential conversation turns | Agents talking past each other |
-| 2 | Interaction cooldown (3-tick gap) | Infinite loops at same location |
-| 3 | Acquaintance-gated names | Agents knowing strangers' names |
-| 4 | Encounter-type round limits | 8-round conversations in hallways |
-| 5 | Body state drift (not events) | Ignoring hunger/fatigue |
-| 6 | Phone number exchange requirement | Unrealistic instant contact |
-| 7 | Filing requires all-informed + 4 signatures | Trivial endgame |
-| 8 | Sleep memory injection | Memory gaps between days |
-| 9 | Fridge system with consumption tracking | Agents never needing to shop |
-| 10 | Service staff at Zum Anker and Späti | Dead locations with no interaction |
-| 11 | Sound propagation between apartments | Apartments as sensory voids |
-| 12 | Memory compression (20 recent + summaries) | Context window overflow |
+The agent responds from its memory file and current state only. If Suki hasn't heard about the eviction, she can't talk about it.
 
 ---
 
@@ -254,113 +430,92 @@ Over 5 iterations, we identified 12 design principles that make the simulation w
 ### Prerequisites
 
 - Node.js 18+
-- An [Anthropic API key](https://console.anthropic.com/)
+- [Anthropic API key](https://console.anthropic.com/)
 
-### Installation
+### Quick Start
 
 ```bash
-git clone https://github.com/your-username/hauswelt.git
-cd hauswelt
+git clone https://github.com/Dominien/social-agent-sim.git
+cd social-agent-sim
 npm install
 cp .env.example .env
 # Add your ANTHROPIC_API_KEY to .env
-```
-
-### Running
-
-```bash
-# Start a fresh simulation
 npm run reset && npm start
-
-# Resume a paused simulation
-npm run resume
-
-# Run a single tick
-npm run tick
-
-# Interview an agent
-npm run interview -- Marco
-
-# Start the web viewer
-npm run viewer
 ```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start simulation from tick 1 |
+| `npm run resume` | Continue from last tick |
+| `npm run tick` | Run a single tick |
+| `npm run reset` | Reset to clean initial state |
+| `npm run interview -- <Name>` | Interview an agent |
+| `npm run viewer` | Start web viewer API |
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ANTHROPIC_API_KEY` | (required) | Your Anthropic API key |
-| `CHARACTER_MODEL` | `haiku` | Model for agent behavior: `haiku` or `sonnet` |
-| `LOG_LEVEL` | `normal` | Output verbosity: `minimal`, `normal`, `verbose` |
-| `TICK_INTERVAL_MS` | `0` | Delay between ticks in milliseconds |
+| `ANTHROPIC_API_KEY` | (required) | Anthropic API key |
+| `CHARACTER_MODEL` | `haiku` | `haiku` (~$0.50/sim day) or `sonnet` (~$5/sim day) |
+| `LOG_LEVEL` | `normal` | `minimal` / `normal` / `verbose` |
+| `TICK_INTERVAL_MS` | `0` | Delay between ticks (ms) |
 
 ### Project Structure
 
 ```
-hauswelt/
+social-agent-sim/
 ├── src/
-│   ├── index.ts          # CLI entry point, reset logic
-│   ├── engine.ts         # Main simulation loop, perception builder
-│   ├── agent-runner.ts   # Agent prompt construction, LLM calls
-│   ├── tools.ts          # Action schema, action resolution
-│   ├── types.ts          # TypeScript types, constants
-│   ├── time.ts           # Tick-to-time conversion
-│   ├── memory.ts         # Memory read/write/compression
-│   ├── body.ts           # Hunger, energy, sleep
-│   ├── finances.ts       # Income, rent, spending
-│   ├── doors.ts          # Door lock/unlock/knock
-│   ├── sounds.ts         # Sound propagation
-│   ├── messages.ts       # Text messages, phone calls
-│   ├── away.ts           # Work/university schedules
-│   ├── environment-agent.ts  # Weather, object placement
-│   ├── interview.ts      # Interview mode
-│   ├── llm.ts            # Claude API wrapper
-│   └── server.ts         # Web viewer API
+│   ├── engine.ts           # Main loop, perception builder, conversation handler
+│   ├── agent-runner.ts     # Prompt construction (the lean part), LLM call
+│   ├── tools.ts            # Action schema + resolution against world rules
+│   ├── types.ts            # World state types, location constants
+│   ├── time.ts             # Tick → simulated time conversion
+│   ├── memory.ts           # Memory read/write/compression
+│   ├── body.ts             # Hunger, energy, sleep quality drift
+│   ├── finances.ts         # Income, rent, spending tracking
+│   ├── doors.ts            # Lock/unlock/knock resolution
+│   ├── sounds.ts           # Adjacency-based sound propagation
+│   ├── messages.ts         # SMS and phone call queuing
+│   ├── away.ts             # Work/university schedules
+│   ├── environment-agent.ts # Weather, object placement, mailbox
+│   ├── interview.ts        # Post-simulation interview mode
+│   ├── index.ts            # CLI, reset logic, initial world state
+│   ├── llm.ts              # Claude API wrapper
+│   └── server.ts           # Web viewer API
 ├── data/
-│   ├── profiles/         # Agent seed files (2 lines each)
-│   ├── memory/           # Live agent memory (updated each tick)
-│   ├── memory_initial/   # Clean memory templates (for reset)
-│   ├── object_content/   # Letter and notice content
-│   ├── object_schedule.json  # When objects appear
-│   ├── ground_truth.json     # Agent financial facts
-│   ├── world_state.json      # Current simulation state
-│   └── logs/             # Per-tick JSON logs
-├── .env.example
-├── package.json
-├── tsconfig.json
-└── README.md
+│   ├── profiles/           # 2-line agent seeds
+│   ├── memory/             # Live memory files (mutated each tick)
+│   ├── memory_initial/     # Clean templates (restored on reset)
+│   ├── object_content/     # Letter and notice full text
+│   ├── object_schedule.json
+│   ├── ground_truth.json   # Financial facts (injected contextually)
+│   └── world_state.json    # Full simulation state
+└── data/logs/              # Per-tick JSON logs
 ```
 
----
+### API (Web Viewer)
 
-## API
-
-The web viewer (`npm run viewer`) exposes these endpoints:
-
-| Endpoint | Description |
-|----------|-------------|
+| Endpoint | Returns |
+|----------|---------|
 | `GET /api/state` | Current world state |
-| `GET /api/agents` | All agent locations and status |
-| `GET /api/agent/:name` | Single agent details + memory |
-| `GET /api/ticks` | List of available tick logs |
-| `GET /api/tick/:number` | Single tick log |
+| `GET /api/agents` | All agent locations + status |
+| `GET /api/agent/:name` | Agent details + memory |
+| `GET /api/ticks` | Available tick logs |
+| `GET /api/tick/:n` | Single tick log |
 | `GET /api/objects` | All world objects |
 
 ---
 
-## The Answer
+## The Point
 
-The question was: can AI agents develop identity without being told who they are?
+Most agent frameworks give LLMs a persona and hope for the best. This project inverts it: **build the world, not the character.** The prompt is deliberately barren — two lines of identity, a list of actions, and whatever the engine decides the agent can currently perceive.
 
-After 14 simulated days, across multiple runs with different models, the answer is: **yes, but not the way you'd expect.**
+The engine does the heavy lifting. It enforces hunger. It enforces locked doors. It enforces that you can't call someone whose number you don't have. It enforces that you can't know about an eviction letter you haven't read. Every "personality trait" that emerges — Marta's sociability, Rolf's isolation, Marco and Sarah's domestic routine — is a consequence of structural constraints, not prompt engineering.
 
-The agents don't develop rich inner lives or consistent personality traits in the way a novelist would write them. What they develop is something more fundamental: **behavioral patterns that emerge from structural constraints.** Marta is social because she's retired and lives near the entrance. Rolf is isolated because he works long hours and has no prior connections. Marco and Sarah drift apart because remote work and different schedules reduce shared experience.
-
-These aren't personality traits. They're consequences of architecture — both the building's architecture and the simulation's architecture.
-
-And when the eviction letter arrives, the agents who built connections during the "boring" first week are the ones who can mobilize. The social graph determines the outcome. Not instructions, not personality prompts, not behavioral scripts.
-
-Identity through context. Empirically validated.
+The agent just acts inside the world. The world makes the agent who they are.
 
 ---
 
