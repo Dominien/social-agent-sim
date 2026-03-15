@@ -1,0 +1,32 @@
+{
+  "marco": {
+    "monthly_income": "€2,800 net",
+    "can_afford_increase": "barely, would have to cut back",
+    "savings": "about €4,000"
+  },
+  "sarah": {
+    "monthly_income": "€1,400 part-time",
+    "can_afford_increase": "with Marco together: barely",
+    "savings": "about €2,000"
+  },
+  "marta": {
+    "monthly_income": "€1,200 pension",
+    "can_afford_increase": "no",
+    "savings": "about €8,000"
+  },
+  "rolf": {
+    "monthly_income": "€2,200 net, irregular",
+    "can_afford_increase": "very difficult",
+    "savings": "about €1,500"
+  },
+  "hakim": {
+    "monthly_income": "€5,500 net",
+    "can_afford_increase": "yes, easily",
+    "savings": "about €35,000"
+  },
+  "suki": {
+    "monthly_income": "€800 BAföG + side job",
+    "can_afford_increase": "impossible",
+    "savings": "about €600"
+  }
+}

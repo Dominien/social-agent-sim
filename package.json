@@ -1,0 +1,35 @@
+{
+  "name": "hauswelt",
+  "version": "1.0.0",
+  "description": "Multi-agent social simulation — 6 AI agents in a Berlin apartment building discover identity through lived experience",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "ai-agents",
+    "multi-agent",
+    "simulation",
+    "social-simulation",
+    "claude",
+    "anthropic",
+    "emergent-behavior"
+  ],
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "tick": "tsx src/index.ts --tick-once",
+    "resume": "tsx src/index.ts --resume",
+    "reset": "tsx src/index.ts --reset",
+    "restart": "tsx src/index.ts --reset && tsx src/index.ts",
+    "interview": "tsx src/index.ts --interview",
+    "viewer": "tsx src/server.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "@types/node": "^20.11.0"
+  }
+}

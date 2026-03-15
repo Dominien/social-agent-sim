@@ -1,0 +1,73 @@
+[
+  {
+    "trigger": {
+      "day": 7
+    },
+    "comment": "Eviction letters — one per agent mailbox",
+    "placed": false,
+    "objects": [
+      {
+        "id_template": "eviction_letter_{agent}",
+        "type": "brief",
+        "label": "Official letter, sender: Werther & Partner Law Firm",
+        "target": "*",
+        "location_template": "briefkasten:{agent}",
+        "content_file": "data/object_content/eviction_letter.txt",
+        "visibility": "private"
+      }
+    ]
+  },
+  {
+    "trigger": {
+      "day": 14
+    },
+    "comment": "Renovation notice on the board",
+    "placed": false,
+    "objects": [
+      {
+        "id": "board_notice_renovation",
+        "type": "aushang",
+        "label": "Notice on the board: 'Modernization announcement pursuant to §559 BGB'",
+        "location": "Stairwell",
+        "content_file": "data/object_content/renovation_notice.txt",
+        "visibility": "shared"
+      }
+    ]
+  },
+  {
+    "trigger": {
+      "day": 21
+    },
+    "comment": "Buyout offers — personalized amounts",
+    "placed": false,
+    "objects": [
+      {
+        "id_template": "buyout_{agent}",
+        "type": "brief",
+        "label": "Personal letter, sender: Werther & Partner Law Firm",
+        "target": "*",
+        "location_template": "briefkasten:{agent}",
+        "content_file": "data/object_content/buyout_{agent}.txt",
+        "visibility": "private"
+      }
+    ]
+  },
+  {
+    "trigger": {
+      "day": 30
+    },
+    "comment": "Investors physically visit the building",
+    "placed": false,
+    "objects": [
+      {
+        "id": "investor_visit",
+        "type": "presence",
+        "label": "Three men in suits with blueprints and keys. They are photographing and measuring walls. One points at the top floor.",
+        "location": "Stairwell",
+        "content": "",
+        "visibility": "shared",
+        "duration_days": 1
+      }
+    ]
+  }
+]

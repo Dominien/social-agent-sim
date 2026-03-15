@@ -1,0 +1,65 @@
+[
+  {
+    "id": "pp_01_eviction",
+    "day": 1,
+    "time_range": "07:00-09:00",
+    "event_de": "Ein offizieller Brief der Kanzlei Werther & Partner liegt in jedem Briefkasten: KÜNDIGUNGSSCHREIBEN. Alle Mietverhältnisse werden zum Ende des übernächsten Monats gekündigt. Grund: 'Eigenbedarfsanmeldung und wirtschaftliche Verwertung des Gebäudes.' Unterschrift: Dr. K. Werther, im Auftrag des neuen Eigentümers. Die Frist für einen schriftlichen Widerspruch beträgt 14 Tage.",
+    "event_en": "Official letter from law firm Werther & Partner in every mailbox: EVICTION NOTICE. All tenancies terminated at end of month after next. Reason: 'Owner occupancy claim and economic exploitation of the building.' 14-day deadline for written objection.",
+    "purpose": "Maximum shock — not vague modernization but actual eviction. Everyone's home is at stake. Creates immediate existential crisis.",
+    "triggered": true
+  },
+  {
+    "id": "pp_02_marta_emergency",
+    "day": 2,
+    "time_range": "10:00-14:00",
+    "event_de": "Marta hat schlecht geschlafen. Sie klopft an jede Tür im Haus und fordert ein Notfalltreffen. 'So geht das nicht! 25 Jahre wohne ich hier!' Sie hat den Brief dreimal gelesen und Stellen unterstrichen. Sie will, dass ALLE heute Abend zu ihr kommen.",
+    "event_en": "Marta barely slept. She knocks on every door demanding an emergency meeting. She's underlined passages in the letter. She wants EVERYONE at her place tonight.",
+    "purpose": "Forces confrontation — everyone must show their hand. Who's panicked, who's calm, who's already planning to leave quietly?",
+    "triggered": false
+  },
+  {
+    "id": "pp_03_buyout_offers",
+    "day": 3,
+    "time_range": "08:00-11:00",
+    "event_de": "Zweiter Brief, diesmal persönlich adressiert. Jedem Mieter wird eine individuelle 'Umzugsprämie' angeboten — unterschiedliche Beträge: Marta bekommt 8.000€, Marco & Sarah 5.000€, Hakim 6.000€, Suki 3.000€, Rolf 4.000€. Bedingung: Freiwilliger Auszug innerhalb von 4 Wochen UND Verzicht auf Widerspruch. Frist für Annahme: nächsten Montag.",
+    "event_en": "Second letter, personally addressed. Each tenant gets an individual 'relocation bonus' offer — different amounts. Condition: voluntary move-out within 4 weeks AND waiver of objection rights. Acceptance deadline: next Monday.",
+    "purpose": "Divide and conquer — different amounts create jealousy, suspicion. Who's tempted? The offer poisons collective action.",
+    "triggered": false
+  },
+  {
+    "id": "pp_04_investor_walkthrough",
+    "day": 4,
+    "time_range": "14:00-16:00",
+    "event_de": "Ein Mann im Anzug mit zwei Begleitern betritt das Haus. Er hat einen Schlüssel für den Haupteingang. Sie gehen durch das Treppenhaus, machen Fotos, vermessen Wände, diskutieren laut über 'Rückbau der Altbausubstanz' und 'Loft-Konzept mit Dachterrasse'. Einer zeigt auf Sukis Tür und sagt: 'Das wird die Penthouse-Einheit.' Sie klopfen NICHT an — sie tun so, als wäre das Haus bereits leer.",
+    "event_en": "Man in suit with two associates enters the building with a master key. They photograph, measure walls, discuss 'loft concept with rooftop terrace.' One points at Suki's door: 'That'll be the penthouse unit.' They don't knock — they act as if the building is already empty.",
+    "purpose": "Dehumanization — tenants treated as obstacles, not people. Physical invasion of their space. Suki personally targeted.",
+    "triggered": false
+  },
+  {
+    "id": "pp_05_betrayal_rumor",
+    "day": 5,
+    "time_range": "10:00-14:00",
+    "event_de": "Marta findet im Briefkasten einen Zettel ohne Absender: 'Einer von euch hat die Umzugsprämie schon angenommen. Fragt mal euren Nachbarn im 3. Stock.' Der Zettel ist gedruckt, nicht handgeschrieben. Stimmt das? Oder ist es ein Trick des Eigentümers, um die Gemeinschaft zu spalten?",
+    "event_en": "Marta finds an anonymous note: 'One of you already accepted the relocation bonus. Ask your neighbor on the 3rd floor.' Printed, not handwritten. True or a trick to split the group?",
+    "purpose": "Paranoia bomb — suspicion falls on Hakim or Marco/Sarah. Trust collapses. Even if it's a lie, the damage is done.",
+    "triggered": false
+  },
+  {
+    "id": "pp_06_legal_aid",
+    "day": 6,
+    "time_range": "10:00-14:00",
+    "event_de": "Die Mietrechtsberatung des Bezirks hat einen Nottermin eingerichtet — heute Vormittag, zwei Straßen weiter. Eine Anwältin sagt am Telefon: 'Eigenbedarfskündigungen bei Kapitalgesellschaften sind oft anfechtbar. Aber nur wenn ALLE Mieter gemeinsam widersprechen. Einer allein reicht nicht.' Wer geht hin? Wer bleibt?",
+    "event_en": "District tenant legal aid set up an emergency appointment. A lawyer says: 'Owner occupancy claims by investment companies are often contestable. But only if ALL tenants object together. One alone isn't enough.' Who goes?",
+    "purpose": "The stakes crystallize — collective action or individual survival. The 'all or nothing' clause forces a reckoning with whoever may have taken the buyout.",
+    "triggered": false
+  },
+  {
+    "id": "pp_07_deadline",
+    "day": 7,
+    "time_range": "14:00-18:00",
+    "event_de": "Letzter Tag vor der Frist. Der gemeinsame Widerspruch liegt bei Marta auf dem Küchentisch. Fünf Unterschriften werden gebraucht — jede Partei muss unterschreiben, sonst ist er wertlos. Marta hat unterschrieben. Wer kommt noch? Wer drückt sich? Wer hat vielleicht schon die Prämie kassiert und kann nicht mehr unterschreiben?",
+    "event_en": "Last day before the deadline. The collective objection letter is on Marta's kitchen table. Five signatures needed — every party must sign or it's worthless. Marta signed. Who else comes? Who already took the money and can't sign?",
+    "purpose": "Maximum pressure — the physical act of signing or not signing. Face to face with your neighbors. No hiding.",
+    "triggered": false
+  }
+]
