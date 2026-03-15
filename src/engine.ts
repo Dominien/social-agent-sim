@@ -836,10 +836,10 @@ async function handleTick(
 
   // Migration guards for endgame tracking
   if (!state.brief_knowledge) {
-    state.brief_knowledge = { marco: true, sarah: true, marta: true, suki: true, hakim: false, rolf: false };
+    state.brief_knowledge = { marco: false, sarah: false, marta: false, suki: false, hakim: false, rolf: false };
   }
   if (!state.objection_signers) {
-    state.objection_signers = { marco: true, sarah: true, marta: true, suki: true, hakim: false, rolf: false };
+    state.objection_signers = { marco: false, sarah: false, marta: false, suki: false, hakim: false, rolf: false };
   }
   if (state.objection_filed === undefined) state.objection_filed = false;
 
@@ -907,8 +907,8 @@ async function handleTick(
     }
   }
 
-  // One-time Hausverwaltung SMS: nudge agents to check their mailbox
-  if (time.dayNumber >= 8 && !state.brief_reminder_sent) {
+  // One-time Hausverwaltung SMS: nudge agents to check their mailbox (Day 7 — same day letters arrive)
+  if (time.dayNumber >= 7 && !state.brief_reminder_sent) {
     for (const agent of AGENT_NAMES) {
       if (!state.message_queue[agent]) state.message_queue[agent] = [];
       state.message_queue[agent].push({
@@ -924,9 +924,9 @@ async function handleTick(
     }
   }
 
-  // One-time law firm ad: phone notification about legal help
+  // One-time law firm ad: phone notification about legal help (Day 8+)
   const anyoneKnows = Object.values(state.brief_knowledge).some(v => v);
-  if (anyoneKnows && !state.kanzlei_ad_sent) {
+  if (time.dayNumber >= 8 && anyoneKnows && !state.kanzlei_ad_sent) {
     for (const agent of AGENT_NAMES) {
       if (!state.message_queue[agent]) state.message_queue[agent] = [];
       state.message_queue[agent].push({

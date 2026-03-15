@@ -127,6 +127,24 @@ function resetSimulation(): void {
       hakim: false,
       suki: false,
     },
+    brief_reminder_sent: false,
+    brief_knowledge: {
+      marco: false,
+      sarah: false,
+      marta: false,
+      rolf: false,
+      hakim: false,
+      suki: false,
+    },
+    objection_signers: {
+      marco: false,
+      sarah: false,
+      marta: false,
+      rolf: false,
+      hakim: false,
+      suki: false,
+    },
+    objection_filed: false,
   };
 
   writeFileSync(
