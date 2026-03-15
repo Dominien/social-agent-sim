@@ -85,8 +85,6 @@ Available actions:
 - think / speak / do / wait / move_to / check_mailbox / read
 - knock_door / lock_door / unlock_door / send_message / phone_call
 - leave_note / file_objection / check_deadline
-
-Keep it short. Actions: 2-5 words. Thoughts: fragments.
 ```
 
 That's **~200 tokens of structure** plus variable perception and memory. No "you are a caring person." No "you tend to check on your neighbors." The environment creates those behaviors:

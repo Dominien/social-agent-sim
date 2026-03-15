@@ -31,9 +31,7 @@ Available actions:
 - phone_call: Call someone. Fields: target (first name, or: 112, Police, Doctor).
 - leave_note: Leave a note. Fields: location (e.g. "Notice board", "Apartment 1 door"), text.
 - file_objection: File an objection against the eviction. Fields: signers (list of names of all tenants who agreed, e.g. ["Marco", "Sarah"]).
-- check_deadline: Check how much time is left for the objection. No fields.
-
-Keep it short. Actions: 2-5 words. Thoughts: fragments.`;
+- check_deadline: Check how much time is left for the objection. No fields.`;
 
 // ─── Resolve Context ────────────────────────────────────────
 
