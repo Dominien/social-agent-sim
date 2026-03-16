@@ -4,7 +4,7 @@
 
 6 LLM agents live in a Berlin apartment building. They receive no personality, no behavioral instructions, no goals. Each agent gets a two-line seed — name, age, job, apartment — and a structured world that enforces physics: hunger, fatigue, locked doors, opening hours, adjacency-based sound, phone number requirements.
 
-The agents don't produce interesting behavior because they're told to. They produce it because the environment leaves them no choice. A retired woman who is always home will encounter more neighbors than a construction worker who leaves at 8am. That's not personality. That's architecture.
+The agents don't produce interesting behavior because they're told to. They produce it because the environment constrains what's possible. A retired woman who is always home will encounter more neighbors than a construction worker who leaves at 8am. That's not personality. That's architecture.
 
 ---
 
@@ -389,7 +389,7 @@ The agents don't know these variables exist. They just talk. The engine interpre
 
 ## What Emerges
 
-None of this is programmed. All of it happens consistently across runs:
+None of this is explicitly instructed. These patterns emerged in testing, driven by structural constraints:
 
 1. **Marta becomes the social hub** — not because she's told to be social, but because she's retired (always home) and lives on the 1st floor (near the entrance). Schedule + location = social role.
 
@@ -503,7 +503,7 @@ social-agent-sim/
 
 Most agent frameworks give LLMs a persona and hope for the best. This project inverts it: **build the world, not the character.** The prompt is deliberately barren — two lines of identity, a list of actions, and whatever the engine decides the agent can currently perceive.
 
-The engine does the heavy lifting. It enforces hunger. It enforces locked doors. It enforces that you can't call someone whose number you don't have. It enforces that you can't know about an eviction letter you haven't read. Every "personality trait" that emerges — Marta's sociability, Rolf's isolation, Marco and Sarah's domestic routine — is a consequence of structural constraints, not prompt engineering.
+The engine does the heavy lifting. It enforces hunger. It enforces locked doors. It enforces that you can't call someone whose number you don't have. It enforces that you can't know about an eviction letter you haven't read. The two-line seed gives the model cultural priors from pretraining — it knows what "retired widow" or "construction worker" implies. But the environment decides which of those priors get expressed. Every "personality trait" that emerges — Marta's sociability, Rolf's isolation, Marco and Sarah's domestic routine — is a consequence of structural constraints channeling those priors, not prompt engineering.
 
 The agent just acts inside the world. The world makes the agent who they are.
 
