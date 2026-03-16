@@ -509,6 +509,12 @@ The agent just acts inside the world. The world makes the agent who they are.
 
 ---
 
+## Author
+
+Built by **Marco Patzelt** — [marcopatzelt7@gmail.com](mailto:marcopatzelt7@gmail.com) · [@Dominien](https://github.com/Dominien)
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
