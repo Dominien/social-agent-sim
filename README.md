@@ -1,4 +1,4 @@
-# Social Agent Sim
+# Social World Model Agentic Simulation
 
 **The environment is the personality.**
 
