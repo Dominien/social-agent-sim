@@ -359,23 +359,15 @@ On Day 7, eviction letters appear in every mailbox. The simulation now has a win
 
 ### Event Timeline
 
-```mermaid
-gantt
-    title Simulation Events
-    dateFormat X
-    axisFormat Day %s
-
-    section Objects
-    Eviction letters in mailboxes     :milestone, 7, 7
-    SMS "Check your mailbox"          :milestone, 7, 7
-    Law firm ad (after anyone reads)  :milestone, 8, 8
-    Renovation notice in stairwell    :milestone, 14, 14
-    Buyout offers in mailboxes        :milestone, 21, 21
-    Investor visit                    :milestone, 30, 30
-
-    section Deadline
-    Objection deadline (Day 14 22:00) :crit, milestone, 14, 14
-```
+| Day | Event |
+|-----|-------|
+| 7 | Eviction letters appear in mailboxes |
+| 7 | SMS sent: "Check your mailbox" |
+| 8 | Law firm ad posted (after anyone reads letter) |
+| **14** | **Objection deadline (22:00)** |
+| 14 | Renovation notice posted in stairwell |
+| 21 | Buyout offers appear in mailboxes |
+| 30 | Investor visit |
 
 ### Tracking
 
