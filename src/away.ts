@@ -42,3 +42,30 @@ export function awayReason(agent: AgentName): string {
     default: return "Away";
   }
 }
+
+/**
+ * Returns a short, neutral work memory summary.
+ * Deliberately boring — "nothing special" prevents the LLM from inventing events.
+ */
+export function workMemorySummary(agent: AgentName): string {
+  switch (agent) {
+    case "rolf": return "Work (construction site). Normal day, nothing special.";
+    case "hakim": return "Work (client office). Normal day, nothing special.";
+    case "sarah": return "Work (daycare). Normal day, nothing special.";
+    case "suki": return "University. Normal day, nothing special.";
+    default: return "Away. Nothing special.";
+  }
+}
+
+/**
+ * Returns the work schedule label for memory entries (e.g. "08:00-17:00").
+ */
+export function workHours(agent: AgentName): string {
+  switch (agent) {
+    case "rolf": return "08:00-17:00";
+    case "hakim": return "09:00-18:00";
+    case "sarah": return "08:00-15:00";
+    case "suki": return "08:00-12:00";
+    default: return "";
+  }
+}

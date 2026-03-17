@@ -177,6 +177,29 @@ function compressExperiences(entries: string[]): string[] {
   return [...trimmedCompressed, ...recent];
 }
 
+// ─── Work Memory Injection ────────────────────────────────
+
+/**
+ * Injects a work memory entry when an agent returns from work.
+ * This fills the gap between "Night. Slept." and the current tick,
+ * preventing the LLM from hallucinating work events.
+ */
+export function injectWorkMemory(
+  agent: AgentName,
+  time: SimTime,
+  workSummary: string,
+  workSchedule: string,
+): void {
+  const content = readAgentMemory(agent);
+  const sections = parseMemory(content);
+
+  const entry = `${time.dayOfWeek} ${workSchedule}. ${workSummary}`;
+  sections.erfahrungen.push(entry);
+
+  const path = join(DATA_DIR, "memory", `${agent}.md`);
+  writeFileSync(path, serializeMemory(sections));
+}
+
 // ─── Update Memory from Actions ────────────────────────────
 
 export function updateAgentMemoryFromActions(

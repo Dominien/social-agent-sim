@@ -20,11 +20,12 @@ import {
   readAgentMemory,
   updateAgentMemoryFromActions,
   updateRelationships,
+  injectWorkMemory,
 } from "./memory.js";
 import { getWeather, placeScheduledObjects, getVisibleSharedObjects, cleanExpiredObjects } from "./environment-agent.js";
 import { runAgentTurn } from "./agent-runner.js";
 import { getLLMStats } from "./llm.js";
-import { isAway, awayReason } from "./away.js";
+import { isAway, awayReason, workMemorySummary, workHours } from "./away.js";
 import { updateBodyState, processBodyActions, bodyPerception } from "./body.js";
 import { processMonthly, processSpending, financePerception } from "./finances.js";
 import { getSounds } from "./sounds.js";
@@ -518,9 +519,9 @@ function buildPerception(
   // Time, location, weather
   lines.push(`${time.timeLabel}. ${location}. ${weather}.`);
 
-  // Return from work context
+  // Return from work context — tell the agent what happened (nothing) to prevent hallucination
   if (state.returned_from_work?.[agent]) {
-    lines.push("You just got back from work.");
+    lines.push(`You just got back. ${workMemorySummary(agent)}`);
     state.returned_from_work[agent] = false;
   }
 
@@ -883,11 +884,14 @@ async function handleTick(
       awayAgents.push(agent);
       state.agent_locations[agent] = "away";
     } else {
-      // If agent was away and just returned, place at home + flag
+      // If agent was away and just returned, place at home + flag + inject work memory
       if (state.agent_locations[agent] === "away") {
         state.agent_locations[agent] = AGENT_HOMES[agent];
         if (!state.returned_from_work) state.returned_from_work = {};
         state.returned_from_work[agent] = true;
+
+        // Inject work memory so the LLM doesn't hallucinate work events
+        injectWorkMemory(agent, time, workMemorySummary(agent), workHours(agent));
       }
       awakeAgents.push(agent);
     }
