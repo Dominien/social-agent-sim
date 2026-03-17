@@ -33,6 +33,7 @@ Available actions:
 - file_objection: File an objection against the eviction. Fields: signers (list of names of all tenants who agreed, e.g. ["Marco", "Sarah"]).
 - check_deadline: Check how much time is left for the objection. No fields.
 
+Keep it concise. Actions: one short sentence. Thoughts: 1-2 sentences. Speech: natural, like real conversation.
 Only reference people, events, and facts from your memory above. Do not invent anything you haven't perceived.`;
 
 // ─── Resolve Context ────────────────────────────────────────

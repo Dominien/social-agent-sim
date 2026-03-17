@@ -366,12 +366,20 @@ function getEncounterType(location: string): EncounterType {
   return "deliberate";
 }
 
-function maxRounds(encounterType: EncounterType): number {
+function maxRounds(encounterType: EncounterType, agents?: AgentName[]): number {
   const configMax = parseInt(process.env.MAX_CONVERSATION_ROUNDS || "8");
   switch (encounterType) {
     case "passing": return Math.min(2, configMax);
     case "coincidence": return Math.min(configMax, configMax);
-    case "deliberate": return configMax;
+    case "deliberate": {
+      // Cohabitants (same home) get fewer rounds — they see each other every tick,
+      // so 8 rounds of banter spirals into infinite loops
+      if (agents && agents.length === 2) {
+        const homes = agents.map(a => AGENT_HOMES[a]);
+        if (homes[0] === homes[1]) return Math.min(3, configMax);
+      }
+      return configMax;
+    }
   }
 }
 
@@ -975,7 +983,7 @@ async function handleTick(
     async ([location, agents]) => {
       const rounds: TickLogRound[] = [];
       const encounterType = agents.length > 1 ? getEncounterType(location) : "passing";
-      const maxR = agents.length > 1 ? maxRounds(encounterType) : 1;
+      const maxR = agents.length > 1 ? maxRounds(encounterType, agents as AgentName[]) : 1;
 
       const isSolo = agents.length === 1;
       const conversationSoFar: string[] = [];
@@ -1095,7 +1103,14 @@ async function handleTick(
               }
 
               const context: ResolveContext = { agent, agentLocation: location, state, time };
-              const result = await runAgentTurn(agent, perception, context);
+              let result: AgentTurnResult;
+              try {
+                result = await runAgentTurn(agent, perception, context);
+              } catch (err) {
+                console.error(`  [ERROR] ${AGENT_DISPLAY_NAMES[agent]} LLM call failed: ${(err as Error).message?.slice(0, 80)}`);
+                // Fall back to a wait action so the simulation can continue
+                result = { agent, actions: [{ type: "wait", result: "", visible: false }] };
+              }
               logActions(result, logLevel);
 
               // Add visible actions to conversation history
