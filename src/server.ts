@@ -2,9 +2,10 @@ import "dotenv/config";
 import { createServer } from "http";
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { join, extname } from "path";
+import { exec } from "child_process";
 
 const DATA_DIR = join(process.cwd(), "data");
-const PUBLIC_DIR = join(process.cwd(), "public");
+const VIEWER_DIR = join(process.cwd(), "viewer", "dist");
 const PORT = 3333;
 
 const MIME: Record<string, string> = {
@@ -108,8 +109,8 @@ const server = createServer((req, res) => {
       return;
     }
 
-    // ─── Static files ────────────────────────────
-    const filePath = join(PUBLIC_DIR, path === "/" ? "index.html" : path);
+    // ─── Static files (built viewer) ──────────────
+    const filePath = join(VIEWER_DIR, path === "/" ? "index.html" : path);
     if (!existsSync(filePath)) {
       res.writeHead(404, headers);
       res.end("Not found");
@@ -128,5 +129,10 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n  Hauswelt Viewer: http://localhost:${PORT}\n`);
+  const url = `http://localhost:${PORT}`;
+  console.log(`\n  Hauswelt Viewer: ${url}\n`);
+
+  // Auto-open browser
+  const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+  exec(`${cmd} ${url}`);
 });

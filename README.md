@@ -6,6 +6,8 @@
 
 The agents don't produce interesting behavior because they're told to. They produce it because the environment constrains what's possible. A retired woman who is always home will encounter more neighbors than a construction worker who leaves at 8am. That's not personality. That's architecture.
 
+![Hauswelt Viewer — pixel art apartment interior with live agent conversations](docs/frontend.png)
+
 ---
 
 ## How It Works
@@ -437,12 +439,14 @@ npm run reset && npm start
 
 | Command | Description |
 |---------|-------------|
-| `npm start` | Start simulation from tick 1 |
+| `npm start` | Start simulation from tick 1 (opens viewer automatically) |
 | `npm run resume` | Continue from last tick |
 | `npm run tick` | Run a single tick |
 | `npm run reset` | Reset to clean initial state |
+| `npm run restart` | Reset + start |
 | `npm run interview -- <Name>` | Interview an agent |
-| `npm run viewer` | Start web viewer API |
+| `npm run viewer` | Start viewer only (build + serve on :3333) |
+| `npm run viewer:dev` | Start viewer in dev mode with hot reload (:5173) |
 
 ### Environment Variables
 
@@ -474,7 +478,12 @@ social-agent-sim/
 │   ├── interview.ts        # Post-simulation interview mode
 │   ├── index.ts            # CLI, reset logic, initial world state
 │   ├── llm.ts              # Claude API wrapper
-│   └── server.ts           # Web viewer API
+│   └── server.ts           # Web viewer API (serves built viewer + tick data)
+├── viewer/                  # 2D pixel art viewer (Vite + React + Canvas)
+│   └── src/
+│       ├── canvas/         # Pixel art renderer: building, agents, interiors
+│       ├── components/     # UI: sidebar, timeline, scene log
+│       └── hooks/          # Data loading, polling, keyboard shortcuts
 ├── data/
 │   ├── profiles/           # 2-line agent seeds
 │   ├── memory/             # Live memory files (mutated each tick)

@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 data/logs/*.json
+viewer/node_modules/
+viewer/dist/

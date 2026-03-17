@@ -20,7 +20,8 @@
     "reset": "tsx src/index.ts --reset",
     "restart": "tsx src/index.ts --reset && tsx src/index.ts",
     "interview": "tsx src/index.ts --interview",
-    "viewer": "tsx src/server.ts",
+    "viewer": "cd viewer && npx vite build && cd .. && tsx src/server.ts",
+    "viewer:dev": "tsx src/server.ts & cd viewer && npx vite --open",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },

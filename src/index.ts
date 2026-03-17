@@ -9,6 +9,7 @@ import {
   mkdirSync,
 } from "fs";
 import { join } from "path";
+import { spawn, execSync } from "child_process";
 import { readWorldState } from "./memory.js";
 import { runSimulation } from "./engine.js";
 import { runInterview } from "./interview.js";
@@ -181,6 +182,31 @@ function resetSimulation(): void {
   console.log("\nSimulation reset complete. Run `npm start` to begin.\n");
 }
 
+// ─── Viewer (API server + browser) ──────────────────────────
+
+function startViewer(): void {
+  const viewerPkg = join(process.cwd(), "viewer", "package.json");
+  if (!existsSync(viewerPkg)) return; // viewer not set up
+
+  // Always rebuild to pick up latest changes
+  try {
+    execSync("cd viewer && npx vite build", { stdio: "pipe" });
+  } catch {
+    console.log("  (Viewer build failed — skipping)");
+    return;
+  }
+
+  // Start API server as child process (dies when parent exits)
+  const child = spawn("npx", ["tsx", "src/server.ts"], {
+    stdio: "ignore",
+    cwd: process.cwd(),
+  });
+  child.unref();
+
+  // Give server a moment to start, then it opens the browser itself
+  console.log("  Viewer starting at http://localhost:3333\n");
+}
+
 // ─── Graceful Shutdown ──────────────────────────────────────
 
 function setupShutdown(): void {
@@ -226,6 +252,9 @@ async function main(): Promise<void> {
     await runInterview(agentName);
     return;
   }
+
+  // Start viewer for all simulation modes
+  startViewer();
 
   // Handle --resume
   if (args.includes("--resume")) {
